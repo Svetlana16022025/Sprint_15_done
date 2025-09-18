@@ -58,7 +58,7 @@ class UserTokenSerializer(serializers.Serializer):
     def validate(self, data):
         """Проверяет наличие обязательных полей."""
         if not data.get('username'):
-            raise serializers.ValidationError('Username обязателен')
+            raise serializers.ValidationError({'username': 'Username обязателен'})
         if not data.get('confirmation_code'):
-            raise serializers.ValidationError('Код подтверждения обязателен')
+            raise serializers.ValidationError({'confirmation_code': 'Код подтверждения обязателен'})
         return data

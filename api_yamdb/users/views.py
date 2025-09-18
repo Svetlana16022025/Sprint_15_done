@@ -1,5 +1,8 @@
 import random
+from datetime import datetime, timedelta
+import jwt
 
+from django.conf import settings
 from django.core.mail import send_mail
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
@@ -58,6 +61,17 @@ class AuthViewSet(viewsets.ViewSet):
     def generate_confirmation_code(self):
         """Генерация 6-значного кода подтверждения"""
         return str(random.randint(100000, 999999))
+
+    def generate_jwt_token(self, user):
+        """Генерация JWT токена самостоятельно"""
+        payload = {
+            'user_id': user.id,
+            'username': user.username,
+            'exp': datetime.utcnow() + timedelta(days=1),
+            'iat': datetime.utcnow(),
+        }
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+        return token
 
     @action(methods=['post'], detail=False, url_path='signup')
     def signup(self, request):
@@ -130,16 +144,7 @@ class AuthViewSet(viewsets.ViewSet):
     def token(self, request):
         """Получение JWT токена"""
         serializer = UserTokenSerializer(data=request.data)
-        if not serializer.is_valid():
-            if 'username' not in serializer.validated_data:
-                return Response(
-                    {'error': 'Username обязателен'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        serializer.is_valid(raise_exception=True)
 
         username = serializer.validated_data['username']
         confirmation_code = serializer.validated_data['confirmation_code']
@@ -158,7 +163,31 @@ class AuthViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        from rest_framework_simplejwt.tokens import AccessToken
-        token = AccessToken.for_user(user)
+        token = self.generate_jwt_token(user)
+        return Response({'token': token}, status=status.HTTP_200_OK)
 
-        return Response({'token': str(token)}, status=status.HTTP_200_OK)
+    @action(methods=['post'], detail=False, url_path='refresh')
+    def refresh_token(self, request):
+        """Обновление JWT токена через username и confirmation code"""
+        serializer = UserTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        username = serializer.validated_data['username']
+        confirmation_code = serializer.validated_data['confirmation_code']
+
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Пользователь не найден'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if user.confirmation_code != confirmation_code:
+            return Response(
+                {'error': 'Неверный код подтверждения'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        token = self.generate_jwt_token(user)
+        return Response({'token': token}, status=status.HTTP_200_OK)

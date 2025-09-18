@@ -15,8 +15,13 @@ token_viewset = AuthViewSet.as_view({
     'post': 'token'
 })
 
+refresh_viewset = AuthViewSet.as_view({
+    'post': 'refresh_token'
+})
+
 urlpatterns = [
     path('v1/auth/signup/', auth_viewset, name='signup'),
     path('v1/auth/token/', token_viewset, name='token'),
+    path('v1/auth/refresh/', refresh_viewset, name='refresh'),
     path('v1/', include(router.urls)),
 ]
