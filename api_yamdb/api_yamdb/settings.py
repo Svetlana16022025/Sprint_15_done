@@ -130,5 +130,13 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'yamdb@example.com'
+EMAIL_SETTINGS = {
+    'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+    'FROM_EMAIL': 'yamdb@example.com',
+    'SUBJECT': 'Код подтверждения для YaMDb'
+}
+
+JWT_SETTINGS = {
+    'EXPIRATION_DAYS': 1,
+    'ALGORITHM': 'HS256'
+}

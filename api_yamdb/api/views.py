@@ -85,6 +85,12 @@ class TitleViewSet(viewsets.ModelViewSet):
             return TitleReadSerializer
         return TitleWriteSerializer
 
+    def get_queryset(self):
+        queryset = Title.objects.all()
+        if self.action in ('list', 'retrieve'):
+            queryset = queryset.select_related('category').prefetch_related('genre')
+        return queryset
+
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для отзывов."""
@@ -96,7 +102,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Возвращает все отзывы для конкретного произведения."""
         title = get_object_or_404(Title, id=self.kwargs.get('title_id'))
-        return title.reviews.all()
+        return title.reviews.select_related('author')
 
     def perform_create(self, serializer):
         """Создает отзыв для конкретного произведения с указанием автора."""
@@ -114,7 +120,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Возвращает все комментарии для конкретного отзыва."""
         review = get_object_or_404(Review, id=self.kwargs.get('review_id'))
-        return review.comments.all()
+        return review.comments.select_related('author')
 
     def perform_create(self, serializer):
         """Создает комментарий для конкретного отзыва с указанием автора."""

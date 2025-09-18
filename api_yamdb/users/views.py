@@ -16,6 +16,9 @@ from .serializers import (
 )
 
 
+TOKEN_EXPIRATION_DAYS = 1
+
+
 class UserViewSet(viewsets.ModelViewSet):
     """Вьюсет для пользователей (только для администраторов)"""
     queryset = User.objects.all()
@@ -67,7 +70,7 @@ class AuthViewSet(viewsets.ViewSet):
         payload = {
             'user_id': user.id,
             'username': user.username,
-            'exp': datetime.utcnow() + timedelta(days=1),
+            'exp': datetime.utcnow() + timedelta(days=TOKEN_EXPIRATION_DAYS),
             'iat': datetime.utcnow(),
         }
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')

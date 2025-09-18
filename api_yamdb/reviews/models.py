@@ -49,7 +49,7 @@ class Title(models.Model):
         max_length=256
     )
     year = models.IntegerField(
-        'Год выпуска'
+        'Год выпуска',
     )
     description = models.TextField(
         'Описание',
